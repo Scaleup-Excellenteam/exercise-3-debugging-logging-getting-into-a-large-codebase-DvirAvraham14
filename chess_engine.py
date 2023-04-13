@@ -7,6 +7,9 @@
 from Piece import Rook, Knight, Bishop, Queen, King, Pawn
 from enums import Player
 
+import logging
+import time
+
 '''
 r \ c     0           1           2           3           4           5           6           7 
 0   [(r=0, c=0), (r=0, c=1), (r=0, c=2), (r=0, c=3), (r=0, c=4), (r=0, c=5), (r=0, c=6), (r=0, c=7)]
@@ -46,6 +49,9 @@ class game_state:
         self.white_king_can_castle = [True, True,
                                       True]  # Has king not moved, has Rook1(col=0) not moved, has Rook2(col=7) not moved
         self.black_king_can_castle = [True, True, True]
+        self.logger = logging.getLogger('chess')
+        filename = 'logs/logfile_{}.log'.format(time.strftime('%Y%m%d_%H%M%S'))
+        logging.basicConfig(filename=filename, level=logging.DEBUG)
 
         # Initialize White pieces
         white_rook_1 = Rook('r', 0, 0, Player.PLAYER_1)
@@ -109,6 +115,18 @@ class game_state:
             [black_rook_1, black_knight_1, black_bishop_1, black_king, black_queen, black_bishop_2, black_knight_2,
              black_rook_2]
         ]
+
+
+        message = f'''
+                    Starting a new game of chess with the following pieces:
+                    White: {[[f'{piece.get_name()}, in row {piece.get_row_number()}, column {piece.get_col_number()}'] 
+                             for piece in self.white_pieces if piece != Player.EMPTY]}
+                    Black: {[[f'{piece.get_name()}, in row {piece.get_row_number()}, column {piece.get_col_number()}'] 
+                             for piece in self.black_pieces if piece != Player.EMPTY]}
+                    Start player: {'White' if self.white_turn else 'Black'}
+                    '''
+
+        self.logger.debug(message)
 
     def get_piece(self, row, col):
         if (0 <= row < 8) and (0 <= col < 8):
@@ -174,6 +192,7 @@ class game_state:
                     if can_move:
                         valid_moves.append(move)
                 self._is_check = True
+                logger.debug(f"{'White' if self.white_turn else 'Black'} is chess position")
             # pinned checks
             elif pinned_pieces and moving_piece.get_name() is not "k":
                 if starting_square not in pinned_pieces:
@@ -221,11 +240,14 @@ class game_state:
         all_black_moves = self.get_all_legal_moves(Player.PLAYER_2)
         if self._is_check and self.whose_turn() and not all_white_moves:
             print("white lost")
+            logger.debug("Game Over - White lost");
             return 0
         elif self._is_check and not self.whose_turn() and not all_black_moves:
             print("black lost")
+            logger.debug("Game Over - Black lost");
             return 1
         elif not all_white_moves and not all_black_moves:
+            logger.debug("Game Over - Stalemate");
             return 2
         else:
             return 3
@@ -455,6 +477,8 @@ class game_state:
                         self.move_log.append(chess_move(starting_square, ending_square, self, self._is_check))
                         self.can_en_passant_bool = False
                 else:
+                    if moving_piece.get_name() is "n":
+                        logger.debug(f"{'White' if self.white_turn else 'black'} Knight move from {starting_square} to {ending_square}")
                     self.move_log.append(chess_move(starting_square, ending_square, self, self._is_check))
                     self.can_en_passant_bool = False
 
@@ -465,6 +489,12 @@ class game_state:
                     self.board[current_square_row][current_square_col] = Player.EMPTY
 
                 self.white_turn = not self.white_turn
+                self.logger.debug(f"""==================================================
+                White: {[[f'{piece.get_name()}, in row {piece.get_row_number()}, column {piece.get_col_number()}'] 
+                             for piece in self.white_pieces if piece != Player.EMPTY]}
+                    Black: {[[f'{piece.get_name()}, in row {piece.get_row_number()}, column {piece.get_col_number()}'] 
+                             for piece in self.black_pieces if piece != Player.EMPTY]}
+                """)
 
             else:
                 pass
@@ -854,7 +884,7 @@ class game_state:
                     # self._is_check = True
                     _checks.append((king_location_row + row_change[i], king_location_col + col_change[i]))
         # print([_checks, _pins, _pins_check])
-        return [_pins_check, _pins, _pins_check]
+        return [_checks, _pins, _pins_check]
 
 
 class chess_move():
