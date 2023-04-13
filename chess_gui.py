@@ -5,6 +5,8 @@
 # Note: The pygame tutorial by Eddie Sharick was used for the GUI engine. The GUI code was altered by Boo Sung Kim to
 # fit in with the rest of the project.
 #
+import logging
+
 import chess_engine
 import pygame as py
 
@@ -37,6 +39,7 @@ def draw_game_state(screen, game_state, valid_moves, square_selected):
     '''
     draw_squares(screen)
     highlight_square(screen, game_state, valid_moves, square_selected)
+    draw_pieces(screen, game_state)
     draw_pieces(screen, game_state)
 
 
@@ -178,6 +181,7 @@ def main():
         draw_game_state(screen, game_state, valid_moves, square_selected)
 
         endgame = game_state.checkmate_stalemate_checker()
+
         if endgame == 0:
             game_over = True
             draw_text(screen, "Black wins.")
